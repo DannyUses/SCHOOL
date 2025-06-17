@@ -1,1 +1,6 @@
+args:
+  - 'set'
+  - 'image'
+  - 'deployment/my-app-deployment'
+  - 'my-app=gcr.io/$PROJECT_ID/my-app:$SHORT_SHA'
 
