@@ -1,0 +1,76 @@
+# Configure the Google Cloud provider.
+# This block tells Terraform which cloud platform it will be interacting with.
+# Ensure your authentication (e.g., gcloud application-default login or a service account key)
+# is set up correctly for Terraform to interact with your Google Cloud environment.
+provider "google" {
+  # The 'project' argument is often included for completeness, even if not directly
+  # used by organization-level policies. It can be left as default or set to a specific project.
+  project = var.gcp_project_id
+}
+
+# Define a variable for your Google Cloud Organization ID.
+# This is a mandatory input for organization policies, as they apply at the organization level.
+# You will need to replace the placeholder with your actual Organization ID.
+# You can find your Organization ID in the Google Cloud Console under IAM & Admin -> Settings,
+# or by running 'gcloud organizations list' in your terminal.
+variable "gcp_organization_id" {
+  description = "The ID of your Google Cloud Organization (e.g., '123456789012')."
+  type        = string
+}
+
+# Define an optional variable for your Google Cloud Project ID.
+# While not strictly required for organization-level policies, it's good practice
+# to include it for consistency or if you plan to add project-level resources later.
+variable "gcp_project_id" {
+  description = "The ID of your Google Cloud Project (optional, can be null)."
+  type        = string
+  default     = null # Set to null if not explicitly providing a project ID
+}
+
+# Resource to enforce the 'Require OS Login' policy.
+# This policy ensures that all new and existing Compute Engine VM instances
+# within your organization use OS Login for SSH access. This centralizes
+# user management and improves security by integrating with IAM.
+resource "google_organization_policy" "enforce_compute_os_login" {
+  # Specifies the Google Cloud Organization where this policy will be applied.
+  organization = var.gcp_organization_id
+
+  # The full name of the organization constraint to enforce.
+  constraint   = "constraints/compute.requireOsLogin"
+
+  # Defines a boolean policy, setting the constraint to 'enforced'.
+  # 'true' means the policy is active and will prevent non-compliant actions.
+  boolean_policy {
+    enforced = true
+  }
+
+  # Optional: You can add a lifecycle block to prevent accidental deletion
+  # of the policy, which is good practice for critical security policies.
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+# Resource to enforce the 'Uniform Bucket Level Access' policy.
+# This policy ensures that all new and existing Cloud Storage buckets
+# within your organization have Uniform Bucket Level Access enabled.
+# This simplifies access control by requiring IAM for all permissions,
+# removing the complexity and potential security risks of ACLs.
+resource "google_organization_policy" "enforce_storage_uniform_bucket_access" {
+  # Specifies the Google Cloud Organization where this policy will be applied.
+  organization = var.gcp_organization_id
+
+  # The full name of the organization constraint to enforce.
+  constraint   = "constraints/storage.uniformBucketLevelAccess"
+
+  # Defines a boolean policy, setting the constraint to 'enforced'.
+  # 'true' means the policy is active and will prevent non-compliant actions.
+  boolean_policy {
+    enforced = true
+  }
+
+  # Optional: Prevent accidental deletion for this critical security policy.
+  lifecycle {
+    prevent_destroy = true
+  }
+}
